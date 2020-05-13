@@ -6,7 +6,7 @@ Aplicação back-end que manipula dados de transações financeiras (entrada e s
 
 - Yarn Package
 - NodeJs
-- Axios
+- UUIDv4
 - Eslint
 - Jest
 - Typescript

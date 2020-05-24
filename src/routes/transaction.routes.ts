@@ -1,38 +1,31 @@
 import { Router } from 'express';
+import { getCustomRepository } from 'typeorm';
+
 import TransactionsRepository from '../repositories/TransactionsRepository';
 import CreateTransactionService from '../services/CreateTransactionService';
 
 const transactionRouter = Router();
-const transactionsRepository = new TransactionsRepository();
 
-transactionRouter.get('/', (request, response) => {
-  try {
-    const transaction = {
-      transactions: transactionsRepository.all(),
-      balance: transactionsRepository.getBalance(),
-    };
-    return response.json(transaction);
-  } catch (err) {
-    return response.status(400).json({ error: err.message });
-  }
+transactionRouter.get('/', async (request, response) => {
+  const transactionsRepository = getCustomRepository(TransactionsRepository);
+  const transactions = await transactionsRepository.find();
+  const balance = await transactionsRepository.getBalance();
+
+  return response.json({ transaction: transactions, balance });
 });
 
-transactionRouter.post('/', (request, response) => {
-  try {
-    const { title, value, type } = request.body;
-    const createTransaction = new CreateTransactionService(
-      transactionsRepository,
-    );
+transactionRouter.post('/', async (request, response) => {
+  const { title, value, type, category_id } = request.body;
+  const createTransaction = new CreateTransactionService();
 
-    const transaction = createTransaction.execute({
-      title,
-      value,
-      type,
-    });
-    return response.json(transaction);
-  } catch (err) {
-    return response.status(400).json({ error: err.message });
-  }
+  const transaction = await createTransaction.execute({
+    title,
+    value,
+    type,
+    category_id,
+  });
+
+  return response.json(transaction);
 });
 
 export default transactionRouter;

@@ -1,32 +1,47 @@
+import { getCustomRepository, getRepository } from 'typeorm';
+
 import TransactionsRepository from '../repositories/TransactionsRepository';
 import Transaction from '../models/Transaction';
+import Category from '../models/Category';
+import AppError from '../errors/AppError';
 
 interface Request {
   title: string;
   value: number;
   type: 'income' | 'outcome';
+  category_id: string;
 }
 
 class CreateTransactionService {
-  private transactionsRepository: TransactionsRepository;
+  public async execute({
+    title,
+    value,
+    type,
+    category_id,
+  }: Request): Promise<Transaction> {
+    const transactionsRepository = getCustomRepository(TransactionsRepository);
+    const categoryRepository = getRepository(Category);
 
-  constructor(transactionsRepository: TransactionsRepository) {
-    this.transactionsRepository = transactionsRepository;
-  }
-
-  public execute({ title, value, type }: Request): Transaction {
     if (type === 'outcome') {
-      const checkBalance = this.transactionsRepository.getBalance();
+      const checkBalance = await transactionsRepository.getBalance();
       if (value > checkBalance.total)
-        throw Error('This income is bigerr than your current balance.');
+        throw new AppError('This income is bigerr than your current balance.');
     }
 
-    const transaction = this.transactionsRepository.create({
+    const categoryVerify = await categoryRepository.findOne({
+      where: category_id,
+    });
+
+    if (!categoryVerify) throw new AppError('This category id dont exist.');
+
+    const transaction = transactionsRepository.create({
       title,
       value,
       type,
+      category_id,
     });
 
+    await transactionsRepository.save(transaction);
     return transaction;
   }
 }

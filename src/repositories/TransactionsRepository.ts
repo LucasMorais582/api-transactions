@@ -1,3 +1,5 @@
+import { EntityRepository, Repository } from 'typeorm';
+
 import Transaction from '../models/Transaction';
 
 interface Balance {
@@ -6,40 +8,32 @@ interface Balance {
   total: number;
 }
 
-interface TransactionDTO {
-  title: string;
-  value: number;
-  type: 'income' | 'outcome';
-}
-
-class TransactionsRepository {
-  private transactions: Transaction[];
-
-  constructor() {
-    this.transactions = [];
-  }
-
-  public all(): Transaction[] {
-    return this.transactions;
-  }
-
-  public getBalance(): Balance {
-    let total = 0;
-    let income = 0;
-    let outcome = 0;
-    this.transactions.forEach(index => {
-      if (index.type === 'income') income += index.value;
-      else if (index.type === 'outcome') outcome += index.value;
+@EntityRepository(Transaction)
+class TransactionsRepository extends Repository<Transaction> {
+  public async getBalance(): Promise<Balance> {
+    const income = await this.find({ where: { type: 'income' } });
+    const incomeValue = income.map(index => {
+      return index.value;
     });
-    total = income - outcome;
-    const balance = { income, outcome, total };
-    return balance;
-  }
+    const totalIncome = incomeValue.reduce(function (total, index) {
+      return total + index;
+    }, 0);
 
-  public create({ title, value, type }: TransactionDTO): Transaction {
-    const transaction = new Transaction({ title, value, type });
-    this.transactions.push(transaction);
-    return transaction;
+    const outcome = await this.find({ where: { type: 'outcome' } });
+    const outcomeValue = outcome.map(index => {
+      return index.value;
+    });
+    const totalOutcome = outcomeValue.reduce(function (total, index) {
+      return total + index;
+    }, 0);
+
+    const balance: Balance = {
+      income: totalIncome,
+      outcome: totalOutcome,
+      total: totalIncome - totalOutcome,
+    };
+
+    return balance;
   }
 }
 

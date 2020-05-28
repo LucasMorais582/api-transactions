@@ -1,7 +1,6 @@
 import { getCustomRepository, getRepository } from 'typeorm';
 
 import TransactionsRepository from '../repositories/TransactionsRepository';
-import Transaction from '../models/Transaction';
 import Category from '../models/Category';
 import AppError from '../errors/AppError';
 
@@ -9,7 +8,7 @@ interface Request {
   title: string;
   value: number;
   type: 'income' | 'outcome';
-  category_id: string;
+  category: string;
 }
 
 class CreateTransactionService {
@@ -17,32 +16,44 @@ class CreateTransactionService {
     title,
     value,
     type,
-    category_id,
-  }: Request): Promise<Transaction> {
+    category,
+  }: Request): Promise<Request> {
     const transactionsRepository = getCustomRepository(TransactionsRepository);
     const categoryRepository = getRepository(Category);
 
     if (type === 'outcome') {
       const checkBalance = await transactionsRepository.getBalance();
       if (value > checkBalance.total)
-        throw new AppError('This income is bigerr than your current balance.');
+        throw new AppError('This income is biger than your current balance.');
     }
 
-    const categoryVerify = await categoryRepository.findOne({
-      where: category_id,
+    let categoryVerify = await categoryRepository.findOne({
+      where: { title: category },
     });
 
-    if (!categoryVerify) throw new AppError('This category id dont exist.');
+    if (!categoryVerify) {
+      categoryVerify = await categoryRepository.create({ title: category });
+      await categoryRepository.save(categoryVerify);
+    }
 
     const transaction = transactionsRepository.create({
       title,
       value,
       type,
-      category_id,
+      category_id: categoryVerify.id,
     });
 
     await transactionsRepository.save(transaction);
-    return transaction;
+
+    // Customização do objeto para ser mostrado
+    const transactionResponse = {
+      id: transaction.id,
+      title,
+      value,
+      type,
+      category: categoryVerify.title,
+    };
+    return transactionResponse;
   }
 }
 

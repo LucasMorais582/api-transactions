@@ -1,4 +1,4 @@
-# api-transaction
+# api-transactions
 
 Aplicação back-end que manipula dados de transações financeiras (entrada e saída de valores).
 

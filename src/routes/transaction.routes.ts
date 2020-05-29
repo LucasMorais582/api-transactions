@@ -36,8 +36,8 @@ transactionRouter.post('/', async (request, response) => {
 });
 
 transactionRouter.post(
-  '/from-csv',
-  upload.single('csv'),
+  '/import',
+  upload.single('file'),
   async (request, response) => {
     const transactionFromCsv = new CreateTransactionFromCsvService();
     const transactions = await transactionFromCsv.execute(request.file.path);

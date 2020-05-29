@@ -12,6 +12,8 @@ Aplicação back-end que manipula dados de transações financeiras (entrada e s
 - Typescript
 - Prettier
 - Express
+- Typeorm
+- Postgres
 
 ## Preparação do ambiente
 
@@ -30,5 +32,5 @@ Rodar o comando:
 ```
 yarn dev:server
 ```
-Para acessar a aplicação:
+Para acessar a aplicação, utilize uma API Client como Postman ou Insomnia:
 - http://localhost:3333
